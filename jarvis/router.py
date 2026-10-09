@@ -23,7 +23,7 @@ class AgentRouter:
         intents = {
             "analysis": ["analyze", "review", "inspect", "assess", "summarize"],
             "coding": ["code", "implement", "build", "develop", "feature"],
-            "testing": ["test", "verify", "validate", "qa", "bug"],
+            "testing": ["test", "verify", "validate", "qa", "check"],
             "debugging": ["debug", "fix", "error", "issue", "crash"],
             "documentation": ["doc", "document", "readme", "writeup"],
             "security": ["security", "vuln", "scan", "risk", "audit"],
@@ -59,20 +59,20 @@ class AgentRouter:
         for agent in candidates:
             score = 0
             if agent.role == intent:
-                score += 6
+                score += 10
             if intent in agent.capabilities:
-                score += 4
+                score += 6
             for keyword in keywords:
                 if keyword in agent.specialization or keyword in agent.capabilities:
-                    score += 2
-            if keyword := next((kw for kw in keywords if kw in agent.name.lower()), None):
-                score += 3
+                    score += 3
+            score += agent.completed_tasks // 50  # Bonus for experienced agents
+            score += int(agent.success_rate * 10)  # Bonus for high success rate
             scored.append((agent, score))
 
         scored.sort(key=lambda item: item[1], reverse=True)
         ranked = [agent for agent, _ in scored[:5]]
         if not ranked:
-            ranked = self.agents[:3]
+            ranked = sorted(self.agents, key=lambda a: a.priority)[:3]
         return ranked
 
     def export_json(self) -> str:

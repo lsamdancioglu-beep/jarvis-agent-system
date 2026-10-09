@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Any, List
 
 
 class SessionManager:
-    """Manages JARVIS session logging and persistence."""
+    """Manages JARVIS session logging and persistence with advanced filtering."""
 
     def __init__(self, session_dir: str = ".sessions"):
         self.session_dir = Path(session_dir)
@@ -22,6 +22,7 @@ class SessionManager:
             "agents_assigned": [],
             "status": "active",
             "command_count": 0,
+            "total_tasks_completed": 0,
         }
         self._save_session()
 
@@ -38,10 +39,12 @@ class SessionManager:
             "command": command,
             "intent": intent,
             "agents": selected_agents,
-            "response_summary": response[:200],
+            "response_summary": response[:150],
         }
         self.session_data["commands"].append(entry)
         self.session_data["command_count"] = len(self.session_data["commands"])
+        self.session_data["total_tasks_completed"] += len(selected_agents)
+        
         if selected_agents:
             for agent in selected_agents:
                 if agent not in self.session_data["agents_assigned"]:
@@ -60,13 +63,15 @@ class SessionManager:
         self._save_session()
 
     @staticmethod
-    def list_sessions(status: str | None = None) -> List[Dict[str, Any]]:
+    def list_sessions(status: str | None = None, limit: int = 50) -> List[Dict[str, Any]]:
         """List all saved sessions, optionally filtered by status."""
         session_dir = Path(".sessions")
         if not session_dir.exists():
             return []
         sessions = []
         for session_file in sorted(session_dir.glob("*.json"), reverse=True):
+            if len(sessions) >= limit:
+                break
             with open(session_file) as f:
                 session = json.load(f)
                 if status is None or session.get("status") == status:
@@ -84,15 +89,17 @@ class SessionManager:
 
     @staticmethod
     def get_stats() -> Dict[str, Any]:
-        """Get session statistics."""
-        all_sessions = SessionManager.list_sessions()
+        """Get comprehensive session statistics."""
+        all_sessions = SessionManager.list_sessions(limit=1000)
         active = [s for s in all_sessions if s["status"] == "active"]
         completed = [s for s in all_sessions if s["status"] == "completed"]
         total_commands = sum(s["command_count"] for s in all_sessions)
+        total_tasks = sum(s["total_tasks_completed"] for s in all_sessions)
         
         return {
             "total_sessions": len(all_sessions),
             "active_sessions": len(active),
             "completed_sessions": len(completed),
             "total_commands": total_commands,
+            "total_tasks_executed": total_tasks,
         }
