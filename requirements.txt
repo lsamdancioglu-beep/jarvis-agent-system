@@ -1,0 +1,2 @@
+# Python project requirements
+# No external dependencies required for the core agent system.
