@@ -1,4 +1,4 @@
-# .gitignore
+# Python
 __pycache__/
 *.pyc
 *.pyo
@@ -7,6 +7,16 @@ __pycache__/
 .venv/
 venv/
 .pytest_cache/
+
+# IDE
 .idea/
 .vscode/
 .DS_Store
+
+# Sessions & Local Data
+.sessions/
+*.json.bak
+instance/
+
+# Flask
+.webassets-cache
